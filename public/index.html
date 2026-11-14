@@ -67,12 +67,12 @@
 
     <!-- password prompt -->
     <dialog id="pass-dialog" class="sheet">
-      <form method="dialog" id="pass-form">
+      <form id="pass-form" novalidate>
         <h2 class="sheet-title" id="pass-title">Пароль</h2>
         <p class="sheet-hint" id="pass-hint"></p>
         <label class="field">
           <span class="field-label">Пароль</span>
-          <input id="pass-input" type="password" autocomplete="current-password" required />
+          <input id="pass-input" type="password" autocomplete="current-password" />
         </label>
         <label class="field" id="pass-confirm-field" hidden>
           <span class="field-label">Повторите пароль</span>

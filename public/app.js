@@ -1,4 +1,4 @@
-import { decryptText, encryptText, DecryptError } from '/crypto.js';
+import { decryptText, encryptText } from '/crypto.js';
 
 /* ------------------------------------------------------------------ helpers */
 const $ = (id) => document.getElementById(id);
@@ -47,9 +47,22 @@ async function api(path, options = {}) {
 }
 
 /* --------------------------------------------------------------- passphrase */
+/** Close the password prompt if it happens to be open. */
+function closePassDialog() {
+  const dialog = $('pass-dialog');
+
+  if (dialog?.open) {
+    dialog.close();
+  }
+}
+
 /**
  * Ask for a password. `confirm` is used when encrypting, so a typo cannot lock
  * the user out of their own note.
+ *
+ * The dialog is opened synchronously, before the caller awaits anything:
+ * Safari refuses `showModal()` once the originating user gesture has been
+ * consumed by an `await`, and the prompt then silently never appears.
  */
 function askPassword({ title, hint, submitLabel, confirm = false }) {
   const dialog = $('pass-dialog');
@@ -72,10 +85,33 @@ function askPassword({ title, hint, submitLabel, confirm = false }) {
   error.textContent = '';
 
   return new Promise((resolve) => {
+    // `showModal()` throws if the dialog is somehow already open, and older
+    // WebKit builds can reject it outright; either way the promise must settle.
+    try {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } catch (cause) {
+      resolve(null);
+      throw cause;
+    }
+
+    input.focus();
+
     const cleanup = () => {
       form.removeEventListener('submit', onSubmit);
       $('pass-cancel').removeEventListener('click', onCancel);
       dialog.removeEventListener('cancel', onCancel);
+    };
+
+    const finish = (value) => {
+      cleanup();
+
+      if (dialog.open) {
+        dialog.close();
+      }
+
+      resolve(value);
     };
 
     const onSubmit = (event) => {
@@ -94,24 +130,17 @@ function askPassword({ title, hint, submitLabel, confirm = false }) {
         return;
       }
 
-      cleanup();
-      dialog.close();
-      resolve(value);
+      finish(value);
     };
 
     const onCancel = (event) => {
       event.preventDefault();
-      cleanup();
-      dialog.close();
-      resolve(null);
+      finish(null);
     };
 
     form.addEventListener('submit', onSubmit);
     $('pass-cancel').addEventListener('click', onCancel);
     dialog.addEventListener('cancel', onCancel);
-
-    dialog.showModal();
-    input.focus();
   });
 }
 
@@ -187,24 +216,32 @@ async function loadList() {
 }
 
 /* -------------------------------------------------------------------- read */
+/**
+ * Fetch a note and ask for its password.
+ *
+ * The prompt opens first, in the same task as the click, because Safari drops
+ * the user-gesture context across an `await`.
+ */
 async function openNote(id) {
+  const prompt = askPassword({
+    title: 'Заметка',
+    hint: 'Введите пароль, чтобы расшифровать текст заметки.',
+    submitLabel: 'Открыть',
+  });
+
   let note;
+  let password;
 
   try {
-    note = await api(`/${id}`);
+    [note, password] = await Promise.all([api(`/${id}`), prompt]);
   } catch (error) {
+    closePassDialog();
     toast(error.message);
     await loadList();
     return;
   }
 
-  const password = await askPassword({
-    title: note.title,
-    hint: 'Введите пароль, чтобы расшифровать текст заметки.',
-    submitLabel: 'Открыть',
-  });
-
-  if (password === null) {
+  if (password === null || note === null) {
     return;
   }
 
@@ -220,11 +257,7 @@ async function openNote(id) {
 
     showView('read');
   } catch (error) {
-    if (error instanceof DecryptError) {
-      toast(error.message);
-    } else {
-      toast(error.message);
-    }
+    toast(error.message);
   }
 }
 
@@ -253,15 +286,19 @@ async function saveNote() {
 
   // Reuse the password the note was already unlocked with, so editing does not
   // ask twice; only prompt when creating or when the session lost the password.
+  // The prompt is opened before any `await` so Safari keeps the gesture context.
   let password = state.currentPassword;
+  let prompt = null;
 
   if (password === null) {
-    password = await askPassword({
+    prompt = askPassword({
       title: isNew ? 'Новая заметка' : 'Сохранение',
       hint: 'Этим паролем текст будет зашифрован. Запомните его — восстановить его нельзя.',
       submitLabel: 'Зашифровать и сохранить',
       confirm: true,
     });
+
+    password = await prompt;
 
     if (password === null) {
       return;
