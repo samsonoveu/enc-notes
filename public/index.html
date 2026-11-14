@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0d0f14" />
+    <title>Заметки</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <button class="icon-btn" id="back-btn" type="button" aria-label="Назад" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      </button>
+      <h1 class="brand" id="brand">Заметки</h1>
+      <button class="icon-btn" id="new-btn" type="button" aria-label="Новая заметка">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+    </header>
+
+    <main id="main">
+      <!-- list -->
+      <section id="view-list" class="view">
+        <p class="empty" id="list-empty" hidden>
+          Пока пусто.<br /><span class="muted">Нажмите «+», чтобы добавить заметку.</span>
+        </p>
+        <ul class="note-list" id="note-list"></ul>
+      </section>
+
+      <!-- reader -->
+      <section id="view-read" class="view" hidden>
+        <article class="paper">
+          <h2 class="paper-title" id="read-title"></h2>
+          <p class="paper-meta" id="read-meta"></p>
+          <div class="paper-body" id="read-body"></div>
+        </article>
+        <div class="actions">
+          <button class="btn" id="read-edit" type="button">Редактировать</button>
+          <button class="btn btn-ghost" id="read-close" type="button">Закрыть</button>
+        </div>
+      </section>
+
+      <!-- editor -->
+      <section id="view-edit" class="view" hidden>
+        <label class="field">
+          <span class="field-label">Заголовок</span>
+          <input id="edit-title" type="text" maxlength="200" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="field-label">Текст</span>
+          <textarea id="edit-body" rows="12" spellcheck="true"></textarea>
+        </label>
+        <div class="actions">
+          <button class="btn" id="edit-save" type="button">Сохранить</button>
+          <button class="btn btn-ghost" id="edit-cancel" type="button">Отмена</button>
+        </div>
+        <button class="danger" id="edit-delete" type="button">Удалить заметку</button>
+      </section>
+    </main>
+
+    <!-- password prompt -->
+    <dialog id="pass-dialog" class="sheet">
+      <form method="dialog" id="pass-form">
+        <h2 class="sheet-title" id="pass-title">Пароль</h2>
+        <p class="sheet-hint" id="pass-hint"></p>
+        <label class="field">
+          <span class="field-label">Пароль</span>
+          <input id="pass-input" type="password" autocomplete="current-password" required />
+        </label>
+        <label class="field" id="pass-confirm-field" hidden>
+          <span class="field-label">Повторите пароль</span>
+          <input id="pass-confirm" type="password" autocomplete="new-password" />
+        </label>
+        <p class="sheet-error" id="pass-error" hidden></p>
+        <div class="actions">
+          <button class="btn" type="submit" id="pass-submit">Открыть</button>
+          <button class="btn btn-ghost" type="button" id="pass-cancel">Отмена</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

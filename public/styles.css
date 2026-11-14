@@ -1,0 +1,510 @@
+/* ------------------------------------------------------------------ tokens */
+:root {
+  --bg: #0d0f14;
+  --bg-soft: #14171f;
+  --bg-lift: #1b1f2a;
+  --line: #262b38;
+  --ink: #e8eaf0;
+  --ink-dim: #9aa1b4;
+  --ink-faint: #626a7e;
+  --accent: #7c9cff;
+  --accent-soft: rgba(124, 156, 255, 0.14);
+  --danger: #ff7a7a;
+  --radius: 14px;
+  --pad: 18px;
+  --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f6f4;
+    --bg-soft: #ffffff;
+    --bg-lift: #ffffff;
+    --line: #e2e2dd;
+    --ink: #16181d;
+    --ink-dim: #5c6273;
+    --ink-faint: #8c92a3;
+    --accent: #3b5bdb;
+    --accent-soft: rgba(59, 91, 219, 0.1);
+    --shadow: 0 10px 30px -14px rgba(20, 22, 30, 0.28);
+  }
+}
+
+/* ------------------------------------------------------------------- reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A very subtle radial wash keeps the dark theme from looking flat. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70ch 50ch at 12% -8%, var(--accent-soft), transparent 70%),
+    radial-gradient(60ch 40ch at 100% 0%, rgba(255, 122, 122, 0.05), transparent 70%);
+  z-index: 0;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) var(--pad) 12px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  flex: 1;
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.icon-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* `display: grid` above would otherwise beat the user-agent `[hidden]` rule. */
+.icon-btn[hidden] {
+  display: none;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.icon-btn svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ------------------------------------------------------------------ layout */
+#main {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px var(--pad) calc(env(safe-area-inset-bottom, 0px) + 40px);
+}
+
+.view[hidden] {
+  display: none;
+}
+
+/* --------------------------------------------------------------- note list */
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.note-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  overflow: hidden;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+  animation: rise 0.32s ease backwards;
+}
+
+.note-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: var(--bg-lift);
+  transform: translateY(-1px);
+}
+
+/* Interactive title: the whole card is one big tap target. */
+.note-open {
+  display: block;
+  width: 100%;
+  padding: 15px 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-title {
+  display: block;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.note-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.lock {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.empty {
+  margin: 22vh auto 0;
+  max-width: 30ch;
+  text-align: center;
+  color: var(--ink-dim);
+}
+
+.empty[hidden] {
+  display: none;
+}
+
+.muted {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------ reader */
+.paper {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  box-shadow: var(--shadow);
+  padding: 22px 20px;
+}
+
+.paper-title {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  line-height: 1.24;
+  letter-spacing: -0.022em;
+  overflow-wrap: anywhere;
+}
+
+.paper-meta {
+  margin: 0 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.paper-body {
+  font-size: 1.02rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.paper-body:empty::before {
+  content: 'Текст пуст';
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* ------------------------------------------------------------------ editor */
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  /* 16px prevents the iOS zoom-on-focus jump. */
+  font-size: 16px;
+  transition: border-color 0.16s ease;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.field textarea {
+  min-height: 44vh;
+  resize: vertical;
+  line-height: 1.6;
+  font-family: var(--mono);
+  font-size: 15px;
+}
+
+/* ----------------------------------------------------------------- actions */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn {
+  flex: 1;
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    filter 0.16s ease,
+    transform 0.16s ease,
+    background 0.16s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .btn {
+    color: #fff;
+  }
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn:active {
+  transform: scale(0.985);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.danger {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed color-mix(in srgb, var(--danger) 45%, var(--line));
+  border-radius: 12px;
+  background: none;
+  color: var(--danger);
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.danger:hover {
+  background: rgba(255, 122, 122, 0.1);
+  border-color: var(--danger);
+}
+
+/* ------------------------------------------------------------------ dialog */
+.sheet {
+  width: min(440px, calc(100vw - 32px));
+  margin: auto;
+  padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--bg-lift);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.sheet::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.sheet-title {
+  margin: 0 0 6px;
+  font-size: 1.16rem;
+  letter-spacing: -0.015em;
+}
+
+.sheet-hint {
+  margin: 0 0 16px;
+  font-size: 0.86rem;
+  color: var(--ink-dim);
+}
+
+.sheet-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 122, 122, 0.12);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+  font-size: 0.86rem;
+}
+
+.sheet-error[hidden] {
+  display: none;
+}
+
+/* `.field` sets `display: block`, which would otherwise beat the user-agent
+   `[hidden]` rule, so the confirmation field needs its own guard. */
+.field[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------------- toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  z-index: 20;
+  padding: 11px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-lift);
+  box-shadow: var(--shadow);
+  font-size: 0.88rem;
+  opacity: 0;
+  transform: translate(-50%, 14px);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* --------------------------------------------------------- wider screens */
+@media (min-width: 600px) {
+  :root {
+    --pad: 24px;
+  }
+
+  .paper {
+    padding: 30px 28px;
+  }
+
+  .paper-title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

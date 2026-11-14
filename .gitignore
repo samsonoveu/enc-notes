@@ -1,0 +1,21 @@
+node_modules/
+.npm-cache/
+dist/
+coverage/
+
+# Encrypted notes are user data, never committed.
+data/
+
+.env
+.env.*
+!.env.example
+
+*.log
+npm-debug.log*
+
+.DS_Store
+Thumbs.db
+
+.vscode/*
+!.vscode/extensions.json
+.idea/
